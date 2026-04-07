@@ -95,7 +95,7 @@ export async function apiFetch(path, options = {}) {
       json: !isFormData,
       extra: options.headers || {},
     }),
-    credentials: options.credentials || "include",
+    credentials: options.credentials || "same-origin",
     signal: options.signal,
   };
 
@@ -109,8 +109,10 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
+  console.log("API_FETCH_REQUEST", { url, method: config.method, hasBody: !!config.body, org: options.org, credentials: config.credentials });
   const response = await fetch(url, config);
   const payload = await parseResponseBody(response);
+  console.log("API_FETCH_RESPONSE", { url, status: response.status, ok: response.ok, payload });
 
   if (response.status === 401) {
     if (!options.skipAuthRedirect) {
