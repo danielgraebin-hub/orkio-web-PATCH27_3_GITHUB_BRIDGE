@@ -321,6 +321,20 @@ export default function AuthPage() {
       return;
     }
 
+    const registerPayload = {
+      tenant,
+      email: emailNormalized,
+      name: nameNormalized,
+      password,
+      access_code: normalizedAccessCode,
+      accept_terms: acceptTerms,
+      marketing_consent: false,
+    };
+
+    console.log("REGISTER_SUBMIT_START");
+    console.log("REGISTER_URL", "/api/auth/register");
+    console.log("REGISTER_PAYLOAD", registerPayload);
+
     setBusy(true);
     setStatus("Creating your account...");
 
@@ -328,15 +342,7 @@ export default function AuthPage() {
       await apiFetch("/api/auth/register", {
         method: "POST",
         org: tenant,
-        body: {
-          tenant,
-          email: emailNormalized,
-          name: nameNormalized,
-          password,
-          access_code: normalizedAccessCode,
-          accept_terms: acceptTerms,
-          marketing_consent: false,
-        },
+        body: registerPayload,
       });
 
       setStatus("Account created. Sending OTP...");
