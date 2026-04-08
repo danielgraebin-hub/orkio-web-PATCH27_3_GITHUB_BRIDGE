@@ -2015,25 +2015,24 @@ function scheduleRealtimeIdleFollowup() {
             clearRealtimeResponseTimeout();
             rtcResponseInFlightRef.current = false;
 
-            const finalText =
-              (rtcTextBufRef.current || '').trim() ||
-              ((rtcAudioTranscriptBufRef.current || '') + (ev?.transcript || '')).trim() ||
-              '';
+            const textFinal = (rtcTextBufRef.current || '').trim();
+            const audioFinal = ((rtcAudioTranscriptBufRef.current || '') + (ev?.transcript || '')).trim();
+            const finalText = textFinal || audioFinal || '';
 
             rtcTextBufRef.current = '';
             rtcAudioTranscriptBufRef.current = '';
 
             if (finalText && !rtcAssistantFinalCommittedRef.current) {
               logRealtimeStep('runtime:response_finalized', {
-                source: 'response.done',
+                source: textFinal ? 'response.done:text_fallback' : 'response.done:audio_fallback',
                 finalText,
               });
               commitRealtimeAssistantFinal(finalText, { source: 'response.done' });
             } else {
               logRealtimeStep('runtime:response_done_without_text', {
                 source: 'response.done',
-                textBuf: (rtcTextBufRef.current || '').length,
-                audioTranscriptBuf: (rtcAudioTranscriptBufRef.current || '').length,
+                textBuf: textFinal.length,
+                audioTranscriptBuf: audioFinal.length,
               });
             }
           }
@@ -2330,9 +2329,22 @@ function scheduleRealtimeIdleFollowup() {
   function commitRealtimeAssistantFinal(rawText, { source = 'unknown' } = {}) {
     const finalText = (rawText || '').toString().trim();
     if (!finalText) return;
-    const dedupeKey = finalText.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const dedupeKey = finalText
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+
+    const sourceKey = String(source || '').trim().toLowerCase();
+    const canonicalSources = new Set(['response.text.done', 'response.done', 'server_guard']);
+
     if (rtcLastAssistantFinalRef.current === dedupeKey) return;
-    if (rtcAssistantFinalCommittedRef.current && source !== 'response.text.done') return;
+
+    if (rtcAssistantFinalCommittedRef.current) {
+      if (!canonicalSources.has(sourceKey)) return;
+      if (sourceKey === 'response.done') return;
+    }
+
     rtcLastAssistantFinalRef.current = dedupeKey;
     rtcAssistantFinalCommittedRef.current = true;
 
