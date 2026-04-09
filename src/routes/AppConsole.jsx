@@ -456,6 +456,7 @@ const [onboardingForm, setOnboardingForm] = useState(() => sanitizeOnboardingFor
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [runtimeHints, setRuntimeHints] = useState(null);
+  const showRuntimeHints = Boolean(user?.role === "admin" && typeof window !== "undefined" && window.localStorage?.getItem("orkio_show_runtime_hints") === "1");
   const [lastTraceId, setLastTraceId] = useState(null);
 
   // Destination selector (Team / single / multi)
@@ -3298,7 +3299,7 @@ async function stopRealtime(reason = 'client_stop') {
 
         {/* Composer */}
         <div style={{ ...styles.composerContainer, padding: isMobile ? "10px 12px calc(10px + env(safe-area-inset-bottom, 0px))" : styles.composerContainer.padding }}>
-          {runtimeHints ? (
+          {showRuntimeHints && runtimeHints ? (
             <div
               style={{
                 marginBottom: "8px",
